@@ -6,6 +6,9 @@ export const environment = {
   production: false,
   googleMaps: {
     accessUrl: 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDeTKRUgexU1gnKwHrnOFTv7jhaJSvaND4',
+  },
+  server: {
+    realTimeServer: 'https://localhost:7200/'
   }
 };
 

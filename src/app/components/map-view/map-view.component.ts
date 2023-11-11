@@ -1,3 +1,4 @@
+import { RealtimeChanges } from './../../../shared/interfaces/common-interfaces';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { environment } from 'src/environments/environment';
@@ -5,8 +6,8 @@ import { GoogleMapsModule, GoogleMap } from '@angular/google-maps';
 import { HttpClientModule, HttpClientJsonpModule, HttpClient } from '@angular/common/http';
 import { Observable, Subject, catchError, map, of, takeUntil, tap } from 'rxjs';
 import { ApiUrls } from 'src/shared/classes/api-urls';
-
-type MapLocation = google.maps.LatLngLiteral;
+import { RealtimeService } from 'src/app/services/realtime/realtime.service';
+import { MapLocation } from 'src/shared/interfaces/map-view-interfaces';
 
 @Component({
   selector: 'app-map-view',
@@ -33,7 +34,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   $destroy = new Subject<void>();
 
-  constructor() {
+  constructor(private rtService: RealtimeService) {
+    this.rtService.startMapServiceConnection();
+    this.rtService.maptesting();
   }
 
   ngOnInit() {
@@ -47,6 +50,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
       position: this.userLocation,
       map: this.map.googleMap,
       title: 'Hello World!'
+    });
+
+    this.rtService.riderLocation.pipe(takeUntil(this.$destroy)).subscribe((location: RealtimeChanges<MapLocation>) => {
+      console.log('location', location);
+      this.updateUserLocation(location.currentValue);
     });
   }
 
