@@ -4,8 +4,8 @@
 
 export const environment = {
   production: false,
-  mapbox: {
-    accessToken: 'pk.eyJ1IjoiZGlsaWdlbnRvcmF0ZXIiLCJhIjoiY2xvc3U3N3dhMDN0aDJpbHExN3Jxa2tvZCJ9.Qk0HF4amxJKXn6Rh-oPkcQ'
+  googleMaps: {
+    accessUrl: 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDeTKRUgexU1gnKwHrnOFTv7jhaJSvaND4',
   }
 };
 

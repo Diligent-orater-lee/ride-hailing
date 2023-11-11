@@ -1,58 +1,69 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import * as mapboxgl from 'mapbox-gl';
 import { environment } from 'src/environments/environment';
+import { GoogleMapsModule, GoogleMap } from '@angular/google-maps';
+import { HttpClientModule, HttpClientJsonpModule, HttpClient } from '@angular/common/http';
+import { Observable, Subject, catchError, map, of, takeUntil, tap } from 'rxjs';
+import { ApiUrls } from 'src/shared/classes/api-urls';
+
+type MapLocation = google.maps.LatLngLiteral;
 
 @Component({
   selector: 'app-map-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    GoogleMapsModule
+  ],
   templateUrl: './map-view.component.html',
   styleUrls: ['./map-view.component.scss']
 })
-export class MapViewComponent {
-  mapLoaded = false;
-  map!: mapboxgl.Map;
-  userMarker!: mapboxgl.Marker;
-  style = 'mapbox://styles/mapbox/streets-v11';
-  lat = 9.99825550514942;
-  lng = 76.30617451263245;
+export class MapViewComponent implements OnInit, OnDestroy {
 
-  constructor() { }
+  @ViewChild(GoogleMap) map!: GoogleMap;
+
+  mapType = google.maps.MapTypeId.ROADMAP;
+  showMapLoadError = false;
+  userLocation: MapLocation = {
+    lat: 9.99825550514942,
+    lng: 76.30617451263245
+  }
+  mapCenter: MapLocation = {...this.userLocation};
+  userMarker!: google.maps.Marker;
+
+  $destroy = new Subject<void>();
+
+  constructor() {
+  }
+
   ngOnInit() {
-    this.initializeMap();
-    this.markUserLocation();
-    setTimeout(() => {
-      this.moveMarker(9.998339086114546, 76.30577015966391)
-    }, 5000)
   }
 
-  initializeMap() {
-    this.map = new mapboxgl.Map({
-      accessToken: environment.mapbox.accessToken,
-      container: 'map',
-      style: this.style,
-      zoom: 16,
-      center: [this.lng, this.lat]
-    });
-    this.map.addControl(new mapboxgl.NavigationControl());
-    this.map.on('render', () => {
-      if (!this.mapLoaded) {
-        this.map.resize()
-      }
+  mapCreated(event: any) {
+  }
+
+  createUserMarker() {
+    this.userMarker = new google.maps.Marker({
+      position: this.userLocation,
+      map: this.map.googleMap,
+      title: 'Hello World!'
     });
   }
 
-  markUserLocation() {
-    this.userMarker = new mapboxgl.Marker({
-      draggable: true
-    }).setLngLat([this.lng, this.lat]).addTo(this.map);
+  mapIdle() {
+    if (!this.userMarker) {
+      this.createUserMarker();
+    }
   }
 
-  moveMarker(toLatitude: number, toLongitude: number) {
-    const updatePosition = (lng: number, lat: number) => {
-      this.userMarker.setLngLat([lng, lat]);
-      this.userMarker.addTo(this.map);
+  updateUserLocation(userLocation: MapLocation) {
+    this.userLocation = userLocation;
+    this.moveMarker(this.userMarker);
+  }
+
+  moveMarker(marker: google.maps.Marker) {
+    const updatePosition = (location: MapLocation) => {
+      marker.setPosition(location);
     }
 
     const duration = 8000; // 5 seconds
@@ -64,14 +75,13 @@ export class MapViewComponent {
       }
       const progress = Math.min((currentTime - startTime) / duration, 1);
 
-      const current = this.userMarker.getLngLat();
-      const fromLongitude = current.lng;
-      const fromLatitude = current.lat;
+      const current = marker.getPosition();
+      const fromLongitude = current?.lng() ?? 0;
+      const fromLatitude = current?.lat() ?? 0;
 
-      const currentLatitude = fromLatitude + (toLatitude - fromLatitude) * progress;
-      const currentLongitude = fromLongitude + (toLongitude - fromLongitude) * progress;
-      updatePosition(currentLongitude, currentLatitude);
-      console.log("Position updated");
+      const currentLatitude = fromLatitude + (this.userLocation.lat - fromLatitude) * progress;
+      const currentLongitude = fromLongitude + (this.userLocation.lng - fromLongitude) * progress;
+      updatePosition({lat: currentLatitude, lng: currentLongitude});
 
       if (progress < 1) {
         requestAnimationFrame(animateMarker);
@@ -80,6 +90,15 @@ export class MapViewComponent {
 
     // Start the animation.
     requestAnimationFrame(animateMarker);
+  }
+
+  ngOnDestroy(): void {
+    this.$destroy.next();
+    this.$destroy.complete();
+  }
+
+  log(event: any) {
+    console.log(event);
   }
 
 }

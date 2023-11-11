@@ -1,1 +1,1 @@
-<div id="map" class="match-parent"></div>
+<google-map height="100%" (idle)="mapIdle()" [center]="mapCenter" [mapTypeId]="mapType" (mapInitialized)="mapCreated($event)"></google-map>
